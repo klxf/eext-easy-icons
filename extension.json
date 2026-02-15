@@ -1,6 +1,6 @@
 {
 	"name": "fangs-easy-icons",
-	"uuid": "7dafe29e10644260a95d70a5221918b5",
+	"uuid": "f8d6601f816e4d4f9976f6a742044d6e",
 	"displayName": "Easy Icons",
 	"description": "简单好用易于扩展的图标库扩展",
 	"version": "1.0.0",
@@ -14,7 +14,10 @@
 		"url": "https://github.com/klxf/eext-easy-icons"
 	},
 	"categories": "PCB",
-	"keywords": ["Tools", "Icons"],
+	"keywords": [
+		"Tools",
+		"Icons"
+	],
 	"images": {
 		"logo": "./images/logo.png"
 	},
