@@ -13,8 +13,8 @@
 		"type": "github",
 		"url": "https://github.com/klxf/eext-easy-icons"
 	},
-	"categories": "Other",
-	"keywords": ["Tools"],
+	"categories": "PCB",
+	"keywords": ["Tools", "Icons"],
 	"images": {
 		"logo": "./images/logo.png"
 	},
