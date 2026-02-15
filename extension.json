@@ -1,0 +1,51 @@
+{
+	"name": "fangs-easy-icons",
+	"uuid": "7dafe29e10644260a95d70a5221918b5",
+	"displayName": "Easy Icons",
+	"description": "简单好用易于扩展的图标库扩展",
+	"version": "1.0.0",
+	"publisher": "fangs233",
+	"engines": {
+		"eda": "^2.3.0"
+	},
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "github",
+		"url": "https://github.com/klxf/eext-easy-icons"
+	},
+	"categories": "Other",
+	"keywords": ["Tools"],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "https://ext.lceda.cn/item/fangs233/fangs-easy-icons",
+	"bugs": "https://ext.lceda.cn/item/fangs233/fangs-easy-icons?tab=4",
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"pcb": [
+			{
+				"id": "pcb-icons-menu",
+				"title": "图标",
+				"menuItems": [
+					{
+						"id": "pcb-icons-open-panel",
+						"title": "打开面板",
+						"registerFn": "openIndexPanel"
+					},
+					{
+						"id": "pcb-icons-open-settings",
+						"title": "扩展设置",
+						"registerFn": "openSettings"
+					},
+					{
+						"id": "pcb-icons-open-about",
+						"title": "关于...",
+						"registerFn": "openAbout"
+					}
+				]
+			}
+		]
+	}
+}

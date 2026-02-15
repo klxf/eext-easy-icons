@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Easy Icons</title>
+	<link rel="stylesheet" href="/iframe/css/index.css" />
+	<script src="/iframe/js/jszip.min.js"></script>
+	<style>
+		::-webkit-scrollbar {
+			height: 0.25rem;
+			width: 0.25rem;
+		}
+		::-webkit-scrollbar-thumb {
+			background: rgba(0, 0, 0, 0.1);
+			border-radius: 99px;
+		}
+		*:focus {
+			outline: none;
+		}
+		html {
+			overflow: hidden;
+		}
+		#icon-display-area {
+			overflow-y: auto;
+			align-content: start;
+			height: 325px;
+		}
+		.repo-header {
+			grid-column: span 4 / span 4;
+			padding: 8px 4px;
+			font-weight: bold;
+			font-size: 0.9rem;
+			color: #1f2937;
+			border-bottom: 1px solid #f3f4f6;
+			margin-bottom: 4px;
+			margin-top: 1.5rem;
+		}
+		.repo-header:first-child {
+			margin-top: 0;
+		}
+		.icon-card {
+			cursor: pointer;
+			transition: all 0.2s;
+			aspect-ratio: 1 / 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			border: 1px solid #f3f4f6;
+			background: #fff;
+		}
+		.icon-card:hover {
+			background-color: #f9fafb;
+			border-color: #3b82f6;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+		}
+		.svg-container {
+			width: 48px;
+			height: 48px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 8px;
+		}
+		.svg-container svg {
+			max-width: 100%;
+			max-height: 100%;
+			width: auto;
+			height: auto;
+		}
+		.offline-badge {
+			background-color: #f3f4f6;
+			color: #6b7280;
+			font-size: 10px;
+			padding: 2px 6px;
+			border-radius: 4px;
+			margin-left: 8px;
+			vertical-align: middle;
+			border: 1px solid #e5e7eb;
+		}
+	</style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="bg-white p-2 rounded-xl shadow-2xl w-[640px] flex flex-col">
+	<div class="flex gap-2 mb-4">
+		<input
+			id="search-input"
+			type="text"
+			placeholder="搜索图标标题或描述..."
+			class="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 transition-all"
+		/>
+		<button id="search-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium transition-colors">
+			搜索
+		</button>
+	</div>
+	<div id="icon-display-area" class="grid grid-cols-4 gap-3 p-1 border border-gray-50 rounded-lg">
+		<div class="col-span-4 text-center text-gray-400 mt-20">正在加载数据...</div>
+	</div>
+</div>
+
+<div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+	<div class="bg-white rounded-xl p-6 w-[350px] shadow-2xl scale-95 transition-transform">
+		<h3 id="modal-title" class="text-lg font-bold mb-4 text-center text-gray-800"></h3>
+		<div
+			id="modal-icon-preview"
+			class="w-32 h-32 mx-auto mb-6 flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-200"
+		></div>
+		<div class="flex justify-end gap-3">
+			<button id="close-modal" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">取消</button>
+			<button
+				id="place-btn"
+				class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+			>
+				放置
+			</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	let allRepos = [];
+	let currentIcon = null;
+	let zipInstances = {};
+
+	async function init() {
+		await loadLocalRepo();
+		await loadZipRepos();
+
+		await renderRepos(document.getElementById('search-input').value.toLowerCase());
+
+		let repoUrls = (await eda.sys_Storage.getExtensionUserConfig('settings-repo-urls')) || [];
+
+		repoUrls.forEach(async (url) => {
+			try {
+				const response = await eda.sys_ClientUrl.request(url, 'GET');
+				const repo = await response.json();
+				repo.icons = repo.icons.map((icon) => ({
+					...icon,
+					fullUrl: repo.baseURL + icon.uri,
+					isLocal: false,
+					isZip: false
+				}));
+
+				allRepos.push(repo);
+				renderRepos(document.getElementById('search-input').value.toLowerCase());
+			} catch (error) {
+				eda.sys_Log.add('远程库加载失败: ' + url, ESYS_LogType.ERROR);
+			}
+		});
+	}
+
+	async function loadZipRepos() {
+		const ZIP_LIST_KEY = 'settings-zip-list';
+		const ZIP_FILE_PREFIX = 'offline-zip-';
+
+		try {
+			const zipsMeta = (await eda.sys_Storage.getExtensionUserConfig(ZIP_LIST_KEY)) || [];
+			for (const meta of zipsMeta) {
+				const zipFile = await eda.sys_Storage.getExtensionUserConfig(ZIP_FILE_PREFIX + meta.uuid);
+				if (!zipFile) continue;
+
+				const arrayBuffer = await new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = () => resolve(reader.result);
+					reader.onerror = reject;
+					reader.readAsArrayBuffer(zipFile);
+				});
+
+				const zip = await JSZip.loadAsync(arrayBuffer);
+				const jsonFile = zip.file("repo.json");
+				if (jsonFile) {
+					const repo = JSON.parse(await jsonFile.async("string"));
+					repo.icons = repo.icons.map(icon => ({
+						...icon,
+						isZip: true,
+						zipUuid: meta.uuid,
+						zipPath: 'icons' + (icon.uri.startsWith('/') ? icon.uri : '/' + icon.uri)
+					}));
+					zipInstances[meta.uuid] = zip;
+					allRepos.push(repo);
+				}
+			}
+		} catch (e) {
+			eda.sys_Log.add('离线 ZIP 库加载失败: ' + e.message, ESYS_LogType.ERROR);
+		}
+	}
+
+	async function loadLocalRepo() {
+		try {
+			const localJsonUri = '/iframe/local-repo/repo.json';
+			const file = await eda.sys_FileSystem.getExtensionFile(localJsonUri);
+			if (file) {
+				const content = await file.text();
+				const repo = JSON.parse(content);
+				repo.icons = repo.icons.map((icon) => ({ ...icon, fullUrl: repo.baseURL + icon.uri, isLocal: true, isZip: false }));
+				allRepos.push(repo);
+			}
+		} catch (error) {
+			eda.sys_Log.add('本地离线库解析失败: ' + error.message, ESYS_LogType.ERROR);
+		}
+	}
+
+	async function renderRepos(keyword) {
+		const container = document.getElementById('icon-display-area');
+		container.innerHTML = '';
+		let hasResults = false;
+
+		allRepos.forEach((repo) => {
+			const filteredIcons = repo.icons.filter(
+				(icon) =>
+					icon.title.toLowerCase().includes(keyword) || (icon.description && icon.description.toLowerCase().includes(keyword)),
+			);
+
+			if (filteredIcons.length > 0) {
+				hasResults = true;
+				const header = document.createElement('div');
+				header.className = 'repo-header flex items-center';
+
+				const meta = repo.publisher ? `：${repo.publisher} (${repo.version})` : '';
+				header.innerHTML = `<span>${repo.displayName}${meta}</span>`;
+
+				if (repo.icons[0] && repo.icons[0].isZip) {
+					const badge = document.createElement('span');
+					badge.className = 'offline-badge';
+					badge.textContent = '离线';
+					header.appendChild(badge);
+				}
+
+				if (repo.icons[0] && repo.icons[0].isLocal) {
+					const badge = document.createElement('span');
+					badge.className = 'offline-badge';
+					badge.textContent = '内置';
+					header.appendChild(badge);
+				}
+
+				container.appendChild(header);
+
+				filteredIcons.forEach((icon) => {
+					const card = document.createElement('div');
+					card.className = 'icon-card rounded-lg p-3';
+					const svgContainer = document.createElement('div');
+					svgContainer.className = 'svg-container';
+					const title = document.createElement('span');
+					title.className = 'text-[11px] text-gray-500 truncate w-full text-center px-1 font-medium';
+					title.textContent = icon.title;
+					card.appendChild(svgContainer);
+					card.appendChild(title);
+
+					fetchAndInjectSvg(icon, svgContainer);
+					card.onclick = () => showModal(icon);
+					container.appendChild(card);
+				});
+			}
+		});
+		if (!hasResults) container.innerHTML = '<div class="col-span-4 text-center text-gray-400 mt-20">未找到相关图标</div>';
+	}
+
+	async function fetchAndInjectSvg(icon, container) {
+		try {
+			let svgText = '';
+			if (icon.isZip) {
+				const zip = zipInstances[icon.zipUuid];
+				const file = zip.file(icon.zipPath);
+				if (file) svgText = await file.async("string");
+			} else if (icon.isLocal) {
+				const file = await eda.sys_FileSystem.getExtensionFile(icon.fullUrl);
+				if (file) svgText = await file.text();
+			} else {
+				const res = await eda.sys_ClientUrl.request(icon.fullUrl, 'GET');
+				svgText = await res.text();
+			}
+			container.innerHTML = svgText;
+		} catch (e) {
+			container.innerHTML = '<span class="text-xs text-red-300">加载错误</span>';
+		}
+	}
+
+	document.getElementById('search-btn').onclick = () => renderRepos(document.getElementById('search-input').value.toLowerCase());
+	document.getElementById('search-input').onkeydown = (e) => {
+		if (e.key === 'Enter') document.getElementById('search-btn').click();
+	};
+
+	function showModal(icon) {
+		currentIcon = icon;
+		const modal = document.getElementById('modal-overlay');
+		document.getElementById('modal-title').textContent = icon.title;
+		const preview = document.getElementById('modal-icon-preview');
+		preview.innerHTML = '';
+		fetchAndInjectSvg(icon, preview);
+		modal.classList.remove('hidden');
+	}
+
+	document.getElementById('place-btn').onclick = async () => {
+		if (!currentIcon) return;
+		try {
+			let svgText = '';
+			if (currentIcon.isZip) {
+				const zip = zipInstances[currentIcon.zipUuid];
+				const file = zip.file(currentIcon.zipPath);
+				if (file) svgText = await file.async("string");
+			} else if (currentIcon.isLocal) {
+				const file = await eda.sys_FileSystem.getExtensionFile(currentIcon.fullUrl);
+				if (file) svgText = await file.text();
+			} else {
+				const response = await eda.sys_ClientUrl.request(currentIcon.fullUrl, 'GET');
+				svgText = await response.text();
+			}
+
+			const parser = new DOMParser();
+			const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+			const svgElement = svgDoc.querySelector('svg');
+			let width = 512,
+				height = 512;
+			if (svgElement) {
+				if (svgElement.viewBox && svgElement.viewBox.baseVal) {
+					width = svgElement.viewBox.baseVal.width;
+					height = svgElement.viewBox.baseVal.height;
+				} else if (svgElement.width.baseVal.value && svgElement.height.baseVal.value) {
+					width = svgElement.width.baseVal.value;
+					height = svgElement.height.baseVal.value;
+				}
+			}
+
+			const imageBlob = new Blob([svgText], { type: 'image/svg+xml' });
+			const complexPolygon = await eda.pcb_MathPolygon.convertImageToComplexPolygon(imageBlob, width, height);
+
+			if (complexPolygon) {
+				if (eda.pcb_Event.isEventListenerAlreadyExist('place-icon')) eda.pcb_Event.removeEventListener('place-icon');
+				await eda.sys_IFrame.hideIFrame('easy-icons-index');
+				eda.sys_Message.showToastMessage('单击画布放置图标', ESYS_ToastMessageType.INFO);
+
+				eda.pcb_Event.addMouseEventListener(
+					'place-icon',
+					'selected',
+					async () => {
+						const position = await eda.pcb_SelectControl.getCurrentMousePosition();
+						await eda.pcb_PrimitiveImage.create(position.x, position.y, complexPolygon, EPCB_LayerId.TOP_SILKSCREEN);
+						eda.pcb_Event.removeEventListener('place-icon');
+						await eda.sys_IFrame.showIFrame('easy-icons-index');
+					},
+					true,
+				);
+			}
+		} catch (error) {
+			eda.sys_Message.showToastMessage('放置图标失败', ESYS_ToastMessageType.ERROR);
+		}
+	};
+
+	document.getElementById('close-modal').onclick = () => {
+		document.getElementById('modal-overlay').classList.add('hidden');
+		currentIcon = null;
+	};
+	init();
+</script>
+</body>
+</html>

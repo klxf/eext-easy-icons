@@ -1,0 +1,111 @@
+{
+	"name": "local-repo",
+	"uuid": "local-repo",
+	"displayName": "本地离线库",
+	"description": "电子设计常用图标库（离线）",
+	"version": "",
+	"publisher": "",
+	"formatVersion": 1,
+	"license": "Apache-2.0",
+	"baseURL": "/iframe/local-repo/icons",
+	"icons": [
+		{
+			"id": "oshwhub",
+			"uri": "/OSHWHUB.svg",
+			"title": "立创开源硬件平台",
+			"description": "立创开源硬件平台 OSHWHUB LOGO",
+			"type": "svg"
+		},
+		{
+			"id": "spark",
+			"uri": "/星火计划-矢量.svg",
+			"title": "星火计划",
+			"description": "星火计划 LOGO",
+			"type": "svg"
+		},
+		{
+			"id": "3C",
+			"uri": "/CCC.svg",
+			"title": "3C",
+			"description": "China Compulsory Certification",
+			"type": "svg"
+		},
+		{
+			"id": "UL",
+			"uri": "/UL.svg",
+			"title": "UL",
+			"description": "UL",
+			"type": "svg"
+		},
+		{
+			"id": "SGS",
+			"uri": "/SGS.svg",
+			"title": "SGS",
+			"description": "SGS",
+			"type": "svg"
+		},
+		{
+			"id": "FCC",
+			"uri": "/FCC.svg",
+			"title": "FCC",
+			"description": "FCC",
+			"type": "svg"
+		},
+		{
+			"id": "LeadFree",
+			"uri": "/LeadFree.svg",
+			"title": "无铅",
+			"description": "无铅",
+			"type": "svg"
+		},
+		{
+			"id": "recyclable",
+			"uri": "/Recyclable.svg",
+			"title": "可回收",
+			"description": "可回收",
+			"type": "svg"
+		},
+		{
+			"id": "RoHS",
+			"uri": "/RoHS.svg",
+			"title": "RoHS",
+			"description": "RoHS",
+			"type": "svg"
+		},
+		{
+			"id": "WEEE",
+			"uri": "/WEEE.svg",
+			"title": "WEEE",
+			"description": "WEEE",
+			"type": "svg"
+		},
+		{
+			"id": "ESD",
+			"uri": "/ESD.svg",
+			"title": "当心静电",
+			"description": "当心静电",
+			"type": "svg"
+		},
+		{
+			"id": "Waring",
+			"uri": "/Warning.svg",
+			"title": "警告",
+			"description": "警告",
+			"type": "svg"
+		},
+		{
+			"id": "HighTemperature",
+			"uri": "/HighTemperature.svg",
+			"title": "当心高温表面",
+			"description": "当心高温表面",
+			"type": "svg"
+		},
+		{
+			"id": "HighVoltageDanger",
+			"uri": "/HighVoltageDanger.svg",
+			"title": "高压危险",
+			"description": "高压危险",
+			"type": "svg"
+		}
+	]
+}
