@@ -51,8 +51,12 @@
 
 			document.getElementById('check').addEventListener('click', function (event) {
 				event.preventDefault();
+
+				eda.sys_Message.showToastMessage('🥺 暂不支持检查更新', ESYS_ToastMessageType.WARNING);
+				return;
+
 				eda.sys_ClientUrl
-					.request('https://ext.lceda.cn/api/v1/extensions/his_version_list?bizKey=270525121854951425', 'GET')
+					.request('https://ext.lceda.cn/api/v1/extensions/his_version_list?bizKey=', 'GET')
 					.then((response) => response.json())
 					.then((data) => {
 						if (data && data.code === 0) {
